@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-namespace Ezphera.VideoPlayer
+namespace Ezphera.MultiVideoPlayer
 {
-    public class MultiVideoPlayer : MonoBehaviour
+    public class EZVideoPlayer : MonoBehaviour
     {
         
     }
