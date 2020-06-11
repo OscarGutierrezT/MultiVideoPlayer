@@ -13,6 +13,6 @@
   "type": "tool",
   "dependencies": {
     "com.unity.textmeshpro": "2.0.1",
-    "com.ezphera.timerscore": "git+https://github.com/OscarGutierrezT/Timer-And-Score"
+    "com.ezphera.timerscore": "https://github.com/OscarGutierrezT/Timer-And-Score"
   }
 }
