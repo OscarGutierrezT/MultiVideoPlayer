@@ -2,13 +2,13 @@
   "name": "com.ezphera.MultiVideoPlayer",
   "displayName": "Multi Video Player",
   "version": "1.0.0",
-  "unity": "2018.1",
+  "unity": "2019.1",
   "author": {
     "name": "Oscar Gutierrez, Zamir Benjumea",
     "email": "produccion@ezphera.net",
     "url": "https://ezpheratech.com"
   },
-  "description": "Whit this package we can use any video url, example Youtube, Vimeo, custom server",
+  "description": "With this package we can use any video url, example Youtube, Vimeo, custom server",
   "repository": {},
   "type": "tool",
   "dependencies": {
