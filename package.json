@@ -12,7 +12,6 @@
   "repository": {},
   "type": "tool",
   "dependencies": {
-    "com.unity.textmeshpro": "2.0.1",
-    "com.ezphera.timerscore": "https://github.com/OscarGutierrezT/Timer-And-Score"
+    "com.unity.textmeshpro": "2.0.1"
   }
 }
