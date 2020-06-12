@@ -1,0 +1,16 @@
+{
+    "name": "com.Ezphera.MultiVideoPlayer",
+    "references": [
+        "GUID:8e7261bbc1f924549a101240120ab3c5",
+        "GUID:77376350a6f36c74fae22cb2a5707202"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
