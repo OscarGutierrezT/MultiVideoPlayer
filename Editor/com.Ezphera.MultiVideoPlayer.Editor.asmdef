@@ -1,7 +1,7 @@
 {
-    "name": "RenderHeads.Media.AVProVideo.Editor",
+    "name": "com.Ezphera.MultiVideoPlayer.Editor",
     "references": [
-        "GUID:8e7261bbc1f924549a101240120ab3c5"
+        "GUID:1ea209229369ba7438e36fa9392fc224"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
