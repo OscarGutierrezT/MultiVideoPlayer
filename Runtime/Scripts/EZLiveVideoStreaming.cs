@@ -3,6 +3,7 @@ using Evereal.YoutubeDLPlayer;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 namespace Ezphera.MultiVideoPlayer
 {
@@ -19,6 +20,7 @@ namespace Ezphera.MultiVideoPlayer
         // Parsed media info
         private MediaInfo mediaInfo;
         public bool _autoLoad;
+        public Action<string> OnParceUrl;
         private void Awake()
         {
             ytdlParser = GetComponent<YTDLParser>();
@@ -26,7 +28,7 @@ namespace Ezphera.MultiVideoPlayer
         }
         private void Start()
         {
-            if (_autoLoad) 
+            if (_autoLoad)
             {
                 StartCoroutine(ytdlParser.PrepareAndParse(url));
             }
@@ -45,18 +47,21 @@ namespace Ezphera.MultiVideoPlayer
         private void ParseCompleted(MediaInfo info)
         {
             mediaInfo = info;
-            if (mediaPlayer) {
+            if (mediaPlayer)
+            {
                 mediaPlayer.OpenVideoFromFile(MediaPlayer.FileLocation.AbsolutePathOrURL, mediaInfo.url);
+                if (!string.IsNullOrEmpty(mediaInfo.url))
+                {
+                    OnParceUrl(mediaInfo.url);
+                }
             }
             //foreach (var format in info.formats)
             //{
             //    Debug.LogFormat(LOG_FORMAT, string.Format("{0}: {1}", format.format_id, format.url));
             //}
         }
-
         private void ErrorReceived(YTDLParser.ErrorEvent error)
         {
-            //Debug.LogErrorFormat(LOG_FORMAT, "Receive error code: " + error.code);
             //errorMsg = error.message;
         }
 
