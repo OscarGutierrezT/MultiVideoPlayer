@@ -13,14 +13,14 @@ namespace Ezphera.MultiVideoPlayer
         [Header("The url live streaming Youtube, Vimeo or Twitch")]
         public string url = "https://www.twitch.tv/tfue";
         [Tooltip("The custom options for youtube-dl")]
-        public string options = "--format best[protocol=m3u8]";
+        public string options = "--format worst[protocol=m3u8]";
 
         public MediaPlayer mediaPlayer;
         YTDLParser ytdlParser;
         // Parsed media info
         private MediaInfo mediaInfo;
         public bool _autoLoad;
-        public Action<string> OnParceUrl;
+        public Action<string, bool> OnParceUrl;
         private void Awake()
         {
             ytdlParser = GetComponent<YTDLParser>();
@@ -52,8 +52,16 @@ namespace Ezphera.MultiVideoPlayer
                 mediaPlayer.OpenVideoFromFile(MediaPlayer.FileLocation.AbsolutePathOrURL, mediaInfo.url);
                 if (!string.IsNullOrEmpty(mediaInfo.url))
                 {
-                    OnParceUrl(mediaInfo.url);
+                    OnParceUrl(mediaInfo.url, true);
                 }
+                else
+                {
+                    OnParceUrl(mediaInfo.url, false);
+                }
+            }
+            else 
+            {
+                OnParceUrl(mediaInfo.url, false);
             }
             //foreach (var format in info.formats)
             //{
