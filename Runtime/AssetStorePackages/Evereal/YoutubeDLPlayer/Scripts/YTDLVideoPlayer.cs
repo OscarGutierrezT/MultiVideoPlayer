@@ -37,6 +37,21 @@ namespace Evereal.YoutubeDLPlayer
     {
       get; private set;
     }
+        /// <summary>
+        /// La calidad Maxima que traeria el video, 
+        /// ¡Hey, esto lo agregó Oscar Gutierrez!
+        /// </summary>
+        public enum EZVideoQuality 
+        {
+            Best,
+            Best720,
+            Best480,
+            Best360
+        }
+        /// <summary>
+        /// Dejamos por default la calidad máxima a 480p
+        /// </summary>
+        public EZVideoQuality videoQuality = EZVideoQuality.Best480;
 
     #endregion
 
@@ -348,10 +363,20 @@ namespace Evereal.YoutubeDLPlayer
         }
       }
     }
-
+    /// <summary>
+    /// Este método fue editado por Oscar Gutierrez para que los usuarios que tengan pc con pocos recursos 
+    /// no se mamen con videos pesados
+    /// </summary>
+    /// <param name="url">Esta variable ni se para que la usaban, al parecer no hace nada...</param>
+    /// <returns></returns>
     private string GetVideoUrlParseOptions(string url)
     {
-      return Constants.DEFAULT_YTDL_VIDEO_PARSE_OPTIONS;
+            var bestFormat = "";
+            if (videoQuality == EZVideoQuality.Best720) bestFormat = "best[height<=720]";
+            else if (videoQuality == EZVideoQuality.Best480) bestFormat = "best[height<=480]";
+            else if (videoQuality == EZVideoQuality.Best360) bestFormat = "best[height<=360]";
+            return string.Format("--format {0}[protocol=https][ext=mp4]/[protocol=http][ext=mp4] --no-cache-dir", bestFormat);
+            //return Constants.WORST_YTDL_VIDEO_PARSE_OPTIONS;
     }
 
     private string ValidVideoUrl(string url)

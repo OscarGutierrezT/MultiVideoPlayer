@@ -17,6 +17,11 @@ MonoBehaviour:
   title: EZMultiVideoPlayer
   sections:
   - heading: Changelog
+    text: "|- v1.0.6 -. Se edit\xF3 el prefab de video para que podamos llamar videos
+      desde unos bot\xF3nes debajo del reproductor."
+    linkText: 
+    url: 
+  - heading: Changelog
     text: '|- v1.0.5 -. Se comento el script para futuras ediciones saber que hace
       cada linea. -. Se agrego el callback para cuando el parser de url falla.'
     linkText: 

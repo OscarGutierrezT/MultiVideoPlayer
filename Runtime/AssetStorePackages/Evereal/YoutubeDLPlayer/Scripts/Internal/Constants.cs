@@ -25,6 +25,10 @@ namespace Evereal.YoutubeDLPlayer
     /// </summary>
     public const string DEFAULT_YTDL_VIDEO_PARSE_OPTIONS = "--format [protocol=https][ext=mp4]/[protocol=http][ext=mp4] --no-cache-dir";
     /// <summary>
+    /// Default low video format
+    /// </summary>
+    public const string WORST_YTDL_VIDEO_PARSE_OPTIONS = "--format best[height<=480][protocol=https][ext=mp4]/[protocol=http][ext=mp4] --no-cache-dir";
+    /// <summary>
     /// Default youtube-dl options settings can be played with Unity <c>AudioSource</c>.
     /// </summary>
     public const string DEFAULT_YTDL_AUDIO_PARSE_OPTIONS = "--format [protocol=https][ext=mp3]/[protocol=http][ext=mp3] --no-cache-dir";
