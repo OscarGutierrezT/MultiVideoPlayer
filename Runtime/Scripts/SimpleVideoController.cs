@@ -34,7 +34,7 @@ namespace Ezphera.MultiVideoPlayer
         int index = 0;
 
         public AudioSource audioSource;
-
+        public GameObject playBtn, pauseBtn;
         private void Awake()
         {
             //photonView = GetComponent<PhotonView>();
@@ -75,7 +75,9 @@ namespace Ezphera.MultiVideoPlayer
                 totalTime.text = GetTimeText(_totalTime);
                 currenTime.text = GetTimeText(_totalTime - (float)videoPlayer.clockTime);
             }
-            
+            playBtn.SetActive(!videoPlayer.isPlaying);
+            pauseBtn.SetActive(videoPlayer.isPlaying);
+
         }
         //public override void OnConnectedToMaster()
         //{

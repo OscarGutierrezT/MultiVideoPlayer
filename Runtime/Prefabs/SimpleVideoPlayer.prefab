@@ -4841,6 +4841,8 @@ MonoBehaviour:
   - https://player.vimeo.com/external/436565806.sd.mp4?s=1d6745314de54900e6282ec707754b49978e3f95&profile_id=164
   videoUrlInputField: {fileID: 0}
   audioSource: {fileID: 5368705652725946477}
+  playBtn: {fileID: 8525625761400027413}
+  pauseBtn: {fileID: 1860131540461747122}
 --- !u!1 &8927996562673312114
 GameObject:
   m_ObjectHideFlags: 0
