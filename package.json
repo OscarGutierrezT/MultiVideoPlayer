@@ -12,6 +12,7 @@
   "repository": {},
   "type": "tool",
   "dependencies": {
-    "com.unity.textmeshpro": "2.0.1"
+    "com.unity.textmeshpro": "2.0.1",
+    "com.ezphera.changelogs":"git+https://github.com/OscarGutierrezT/UnityChangelogs"
   }
 }
