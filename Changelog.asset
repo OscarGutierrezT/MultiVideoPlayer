@@ -14,5 +14,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   icon: {fileID: 0}
   iconMaxWidth: 128
-  title: 
-  changes: []
+  title: Multi Video Player
+  changes:
+  - version: 1.0.5
+    description: Init changelog
+    knowIssues: []
+    fixes:
+    - Se comento el script para futuras ediciones saber que hace cada linea.
+    - Se agrego el callback para cuando el parser de url falla.
+  - version: 1.0.6
+    description: Fixed any issues
+    knowIssues: []
+    fixes: []
+  - version: 1.0.7
+    description: Nuevo player
+    knowIssues: []
+    fixes:
+    - Se agrego un nuevo player para reproducir videos con enlace directo al video
+  - version: 1.0.8
+    description: Fixed some issues
+    knowIssues:
+    - Falta agregar el poder cambiar el formato de video desde el juego, actualmente
+      esta solo desde el editor. "Best y Wast"
+    - 
+    fixes:
+    - 
