@@ -13,6 +13,6 @@
   "type": "tool",
   "dependencies": {
     "com.unity.textmeshpro": "2.0.1",
-    "com.ezphera.changelogs":"https://github.com/OscarGutierrezT/UnityChangelogs.git#upm"
+    "com.ezphera.changelogs":"https://github.com/OscarGutierrezT/UnityChangelogs.git"
   }
 }
