@@ -1,7 +1,7 @@
 {
   "name": "com.ezphera.multivideoplayer",
   "displayName": "Multi Video Player",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "unity": "2019.1",
   "author": {
     "name": "Oscar Gutierrez - Zamir Benjumea",
@@ -13,6 +13,6 @@
   "type": "tool",
   "dependencies": {
     "com.unity.textmeshpro": "2.0.1",
-    "com.ezphera.changelogs":"git+https://github.com/OscarGutierrezT/UnityChangelogs"
+    "com.ezphera.changelogs":"https://github.com/OscarGutierrezT/UnityChangelogs.git#upm"
   }
 }
