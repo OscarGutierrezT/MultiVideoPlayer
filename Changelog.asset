@@ -37,3 +37,10 @@ MonoBehaviour:
     - Falta agregar el poder cambiar el formato de video desde el juego, actualmente
       esta solo desde el editor. "Best y Wast"
     fixes: []
+  - version: 1.0.9
+    description: Fixed dependencies
+    knowIssues:
+    - Falta agregar el poder cambiar el formato de video desde el juego, actualmente
+      esta solo desde el editor. "Best y Wast"
+    fixes:
+    - Fixed dependencies with changelogs
