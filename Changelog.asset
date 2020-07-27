@@ -44,3 +44,10 @@ MonoBehaviour:
       esta solo desde el editor. "Best y Wast"
     fixes:
     - Fixed dependencies with changelogs
+  - version: 1.1.0
+    description: Updated plugin Youtube DL
+    knowIssues:
+    - Falta agregar el poder cambiar el formato de video desde el juego, actualmente
+      esta solo desde el editor. "Best y Wast"
+    fixes:
+    - Plugin dl for Android is Updated, ready for use on Oculus Go

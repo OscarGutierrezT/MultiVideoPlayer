@@ -138,6 +138,8 @@ MonoBehaviour:
   url: https://vimeo.com/235502927
   autoPlay: 1
   loop: 1
+  supportedAudioFormats: []
+  initialQuality: 4
   renderType: 0
   videoRenderer: {fileID: 23132444667409840}
   targetCamera: {fileID: 0}

@@ -36,10 +36,15 @@ namespace Evereal.YoutubeDLPlayer
     SCREEN,
   }
 
-  // public enum QualityType
-  // {
-  //   Auto, // Decide video quality automatically.
-  //   Highest, // Select the highest video quality.
-  //   Lowest, // Select the lowest video quality.
-  // }
+  /// <summary>
+  /// The quality type of <c>YTDLVideoPlayer</c> module.
+  /// </summary>
+  public enum QualityType
+  {
+    _360p,
+    _720p,
+    _1080p,
+    _1440p,
+    _2160p,
+  }
 }

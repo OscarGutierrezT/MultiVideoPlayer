@@ -1,7 +1,6 @@
 ﻿/* Copyright (c) 2020-present Evereal. All rights reserved. */
 
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -37,7 +36,7 @@ namespace Evereal.YoutubeDLPlayer
       mediaInfo = info;
 
       // extract available audio format
-      ExtractAvailableAudioFormat();
+      // ExtractAvailableAudioFormat();
 
       // download & prepare audio
       StartCoroutine(GetAudioClip(ValidParsedAudioUrl(mediaInfo, mediaInfo.url), autoPlay));
@@ -150,23 +149,23 @@ namespace Evereal.YoutubeDLPlayer
       }
     }
 
-    private void ExtractAvailableAudioFormat()
-    {
-      availableMediaFormat.Clear();
-      // parse valid format for audio source
-      foreach (MediaFormat format in mediaInfo.formats)
-      {
-        // TODO, support other container and protocol
-        if (
-          format.ext == "mp3" &&
-          format.acodec != "none" &&
-          (format.protocol == "https" || format.protocol == "http")
-        )
-        {
-          availableMediaFormat.Add(format);
-        }
-      }
-    }
+    // private void ExtractAvailableAudioFormat()
+    // {
+    //   availableMediaFormat.Clear();
+    //   // parse valid format for audio source
+    //   foreach (MediaFormat format in mediaInfo.formats)
+    //   {
+    //     // TODO, support other container and protocol
+    //     if (
+    //       format.ext == "mp3" &&
+    //       format.acodec != "none" &&
+    //       (format.protocol == "https" || format.protocol == "http")
+    //     )
+    //     {
+    //       availableMediaFormat.Add(format);
+    //     }
+    //   }
+    // }
 
     private string GetAudioUrlParseOptions(string url)
     {
@@ -196,8 +195,6 @@ namespace Evereal.YoutubeDLPlayer
       audioSource = gameObject.AddComponent<AudioSource>();
       audioSource.playOnAwake = false;
       audioSource.loop = loop;
-
-      availableMediaFormat = new List<MediaFormat>();
     }
 
     private void Start()

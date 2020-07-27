@@ -1,7 +1,6 @@
 ﻿/* Copyright (c) 2020-present Evereal. All rights reserved. */
 
 using UnityEngine;
-using UnityEngine.Video;
 
 namespace Evereal.YoutubeDLPlayer
 {
@@ -24,8 +23,6 @@ namespace Evereal.YoutubeDLPlayer
 
     private YTDLVideoPlayer ytdlVideoPlayer;
     private Camera mainCamera;
-
-    private int currentFormatIndex = -1;
 
     private float maxProgressValue;
     private float newProgressX;
@@ -76,6 +73,16 @@ namespace Evereal.YoutubeDLPlayer
       loadingCircle.SetActive(true);
     }
 
+    private void OnPlayerPrepareCompleted(YTDLPlayerBase player)
+    {
+      // jump video to position
+      if (isVideoJumping)
+      {
+        CalcProgressSimpleValue();
+        JumpVideo();
+      }
+    }
+
     private void OnPlayerStarted(YTDLPlayerBase player)
     {
       loadingCircle.SetActive(false);
@@ -84,23 +91,9 @@ namespace Evereal.YoutubeDLPlayer
       // update video title
       videoTitle.SetText(videoInfo.title);
       // update quality button
-      if (currentFormatIndex == -1)
-      {
-        qualityButton.SetText(GenQualityText(videoInfo.format_note, videoInfo.height));
-      }
+      UpdateQualityButton();
       // toggle play button
       playButton.Toggle();
-    }
-
-    private void OnPlayerPrepareCompleted(YTDLPlayerBase player)
-    {
-      loadingCircle.SetActive(false);
-      if (isVideoJumping)
-      {
-        CalcProgressSimpleValue();
-        PlayVideo();
-        JumpVideo();
-      }
     }
 
     #endregion
@@ -157,8 +150,9 @@ namespace Evereal.YoutubeDLPlayer
 
     private void JumpVideo()
     {
-      var frame = ytdlVideoPlayer.frameCount * simpleProgressValue;
-      ytdlVideoPlayer.frame = (long)frame;
+      int duration = ytdlVideoPlayer.GetVideoInfo().duration;
+      double time = (double)duration * simpleProgressValue;
+      ytdlVideoPlayer.time = time;
     }
 
     public void OnVolumePressDown()
@@ -193,15 +187,6 @@ namespace Evereal.YoutubeDLPlayer
       simpleVolumeValue = volumeValue / maxVolumeValue;
       // set volume value
       ytdlVideoPlayer.SetAudioVolume(0, simpleVolumeValue);
-    }
-
-    private string GenQualityText(string formatNote, int height)
-    {
-      if (string.IsNullOrEmpty(formatNote))
-      {
-        return string.Format("{0}p", height);
-      }
-      return formatNote;
     }
 
     public void SetVideoParsedUrl(string url)
@@ -267,18 +252,30 @@ namespace Evereal.YoutubeDLPlayer
 
     public void ToggleQuality()
     {
-      if (ytdlVideoPlayer.availableMediaFormat.Count <= 0)
-      {
+      if (ytdlVideoPlayer.SupportedVideoFormats.Count <= 0)
         return;
-      }
+      if (loadingCircle.activeSelf)
+        return;
       loadingCircle.SetActive(true);
-      PauseVideo();
       isVideoJumping = true;
-      currentFormatIndex = (++currentFormatIndex) % ytdlVideoPlayer.availableMediaFormat.Count;
-      MediaFormat videoFormat = ytdlVideoPlayer.availableMediaFormat[currentFormatIndex];
-      qualityButton.SetText(GenQualityText(videoFormat.format_note, videoFormat.height));
-      SetVideoParsedUrl(videoFormat.url);
-      PrepareVideo();
+
+      int index = ytdlVideoPlayer.formatIndex;
+      index = (++index) % ytdlVideoPlayer.SupportedVideoFormats.Count;
+      ytdlVideoPlayer.SwitchVideoFormat(index);
+
+      UpdateQualityButton();
+    }
+
+    private void UpdateQualityButton()
+    {
+      int index = ytdlVideoPlayer.formatIndex;
+      MediaFormat format = ytdlVideoPlayer.SupportedVideoFormats[index];
+      string formatText = format.format_note;
+      if (string.IsNullOrEmpty(formatText))
+      {
+        formatText = string.Format("{0}p", format.height);
+      }
+      qualityButton.SetText(formatText);
     }
 
     #endregion
@@ -342,22 +339,36 @@ namespace Evereal.YoutubeDLPlayer
 
       volumePosY = volumeCircle.transform.localPosition.y;
       volumeBarWidth = volumeBarBG.GetComponent<SpriteRenderer>().bounds.size.x;
+
+      minProgressX = progressBar.transform.localPosition.x;
+      maxProgressX = minProgressX + progressBarWidth;
     }
 
     private void Update()
     {
-      if (!isProgressDragging && !isVideoJumping)
+      if (!isProgressDragging && !isVideoJumping && isVideoPlaying)
       {
-        if (ytdlVideoPlayer.frameCount > 0)
+        int duration = ytdlVideoPlayer.GetVideoInfo().duration;
+
+        // Unity video player bug, time may exceed duration
+        // Force stop or loop
+        if (ytdlVideoPlayer.time >= duration)
         {
-          float progress = (float)ytdlVideoPlayer.frame / (float)ytdlVideoPlayer.frameCount;
-          progressBar.transform.localScale = new Vector3(progressBarWidth * progress, progressBar.transform.localScale.y, 0);
-          progressCircle.transform.localPosition = new Vector2(progressBar.transform.localPosition.x + (progressBarWidth * progress), progressCircle.transform.localPosition.y);
+          if (ytdlVideoPlayer.loop)
+          {
+            ReplayVideo();
+          }
+          else
+          {
+            StopVideo();
+          }
+          return;
         }
-      }
-      if (isVideoPlaying && ytdlVideoPlayer.isPlaying)
-      {
-        double duration = (double)ytdlVideoPlayer.GetVideoInfo().duration;
+
+        float progress = (float)ytdlVideoPlayer.time / duration;
+        progressBar.transform.localScale = new Vector3(progressBarWidth * progress, progressBar.transform.localScale.y, 0);
+        progressCircle.transform.localPosition = new Vector2(progressBar.transform.localPosition.x + (progressBarWidth * progress), progressCircle.transform.localPosition.y);
+
         string timeString = string.Format("{0} / {1}",
           Utils.GetFormatTimeStringFromSeconds(ytdlVideoPlayer.time),
           Utils.GetFormatTimeStringFromSeconds(duration));
@@ -370,16 +381,16 @@ namespace Evereal.YoutubeDLPlayer
 
     private void OnEnable()
     {
+      ytdlVideoPlayer.prepareCompleted += OnPlayerPrepareCompleted;
       ytdlVideoPlayer.parseStarted += OnParseStarted;
       ytdlVideoPlayer.started += OnPlayerStarted;
-      ytdlVideoPlayer.prepareCompleted += OnPlayerPrepareCompleted;
     }
 
     private void OnDisable()
     {
+      ytdlVideoPlayer.prepareCompleted -= OnPlayerPrepareCompleted;
       ytdlVideoPlayer.parseStarted -= OnParseStarted;
       ytdlVideoPlayer.started -= OnPlayerStarted;
-      ytdlVideoPlayer.prepareCompleted -= OnPlayerPrepareCompleted;
     }
 
     #endregion

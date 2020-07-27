@@ -16,10 +16,7 @@ namespace Evereal.YoutubeDLPlayer
     [Serializable]
     public class Section
     {
-        public string heading;
-        [TextArea]
-        public string text;
-        public string linkText, url;
+      public string heading, text, linkText, url;
     }
   }
 }

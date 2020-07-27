@@ -15,7 +15,6 @@ namespace Evereal.YoutubeDLPlayer
     YTDLVideoPlayer ytdlVideoPlayer;
     SerializedProperty videoRenderer;
     SerializedProperty targetCamera;
-    SerializedProperty videoQuality;
 
     public void OnEnable()
     {
@@ -23,7 +22,6 @@ namespace Evereal.YoutubeDLPlayer
 
       videoRenderer = serializedObject.FindProperty("videoRenderer");
       targetCamera = serializedObject.FindProperty("targetCamera");
-      videoQuality = serializedObject.FindProperty("videoQuality");
     }
 
     public override void OnInspectorGUI()
@@ -33,8 +31,8 @@ namespace Evereal.YoutubeDLPlayer
       ytdlVideoPlayer.url = EditorGUILayout.TextField("URL", ytdlVideoPlayer.url);
       ytdlVideoPlayer.autoPlay = EditorGUILayout.Toggle("Auto Play", ytdlVideoPlayer.autoPlay);
       ytdlVideoPlayer.loop = EditorGUILayout.Toggle("Loop", ytdlVideoPlayer.loop);
-      ytdlVideoPlayer.renderType = (RenderType)EditorGUILayout.EnumPopup("Render Type", ytdlVideoPlayer.renderType);
-      ytdlVideoPlayer.videoQuality = (YTDLVideoPlayer.EZVideoQuality)EditorGUILayout.EnumPopup("Max Quality", ytdlVideoPlayer.videoQuality);
+      ytdlVideoPlayer.initialQuality = (QualityType)EditorGUILayout.EnumPopup("Quality", ytdlVideoPlayer.initialQuality);
+      ytdlVideoPlayer.renderType = (RenderType)EditorGUILayout.EnumPopup("Render", ytdlVideoPlayer.renderType);
       if (ytdlVideoPlayer.renderType == RenderType.MATERIAL)
       {
         EditorGUILayout.PropertyField(videoRenderer, new GUIContent("Video Renderer"), true);
@@ -49,11 +47,6 @@ namespace Evereal.YoutubeDLPlayer
         EditorUtility.SetDirty(target);
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
       }
-
-            if (ytdlVideoPlayer.videoQuality == YTDLVideoPlayer.EZVideoQuality.Best) 
-            {
-                EditorGUILayout.HelpBox("Se verá muy bonito y todo pero quizás a los clientes ni les corra, asegurate de escoger la mejor opción", MessageType.Warning);
-            }
 
       // Apply changes to the serializedProperty - always do this at the end of OnInspectorGUI.
       serializedObject.ApplyModifiedProperties();

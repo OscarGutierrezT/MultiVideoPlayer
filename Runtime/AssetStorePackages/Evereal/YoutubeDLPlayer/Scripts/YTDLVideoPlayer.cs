@@ -1,6 +1,6 @@
 ﻿/* Copyright (c) 2020-present Evereal. All rights reserved. */
 
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.Video;
 
@@ -10,6 +10,8 @@ namespace Evereal.YoutubeDLPlayer
   {
     #region Properties
 
+    // Initial video quality settings
+    public QualityType initialQuality = QualityType._720p;
     // Video render type
     public RenderType renderType = RenderType.MATERIAL;
     // Video player renderer
@@ -20,8 +22,15 @@ namespace Evereal.YoutubeDLPlayer
     // Unity video player instance
     private VideoPlayer videoPlayer;
 
+    // Just another video player instance
+    // TODO, replace with a better solution such as cache audio file
+    private VideoPlayer audioPlayer;
+    private bool useAudioPlayer = false;
+
     // Video player audio source instance
     private AudioSource audioSource;
+
+    public int formatIndex { get; private set; }
 
     // Whether content is being played. (Read Only)
     public bool isPlaying
@@ -32,26 +41,20 @@ namespace Evereal.YoutubeDLPlayer
       }
     }
 
+    // Whether the VideoPlayer has successfully prepared the content to be played. (Read Only)
+    public bool isPrepared
+    {
+      get
+      {
+        return videoPlayer.isPrepared;
+      }
+    }
+
     // Whether playback is paused. (Read Only)
     public bool isPaused
     {
       get; private set;
     }
-        /// <summary>
-        /// La calidad Maxima que traeria el video, 
-        /// ¡Hey, esto lo agregó Oscar Gutierrez!
-        /// </summary>
-        public enum EZVideoQuality 
-        {
-            Best,
-            Best720,
-            Best480,
-            Best360
-        }
-        /// <summary>
-        /// Dejamos por default la calidad máxima a 480p
-        /// </summary>
-        public EZVideoQuality videoQuality = EZVideoQuality.Best480;
 
     #endregion
 
@@ -64,25 +67,47 @@ namespace Evereal.YoutubeDLPlayer
     public event ParseCompletedEvent parseCompleted = delegate { };
     private void OnParseCompleted(MediaInfo info)
     {
-      mediaInfo = info;
-
-      // extract available video format
-      ExtractAvailableVideoFormat();
-
-      // set video player url
-      videoPlayer.url = ValidParsedVideoUrl(mediaInfo, mediaInfo.url);
-
-      // set video to play then prepare audio to prevent buffering
-      videoPlayer.Prepare();
-
-      if (autoPlay)
-      {
-        // play video
-        videoPlayer.Play();
-      }
-
       // parse completed
       isParsed = true;
+
+      mediaInfo = info;
+
+      // extract supported video format
+      ExtractSupportedMediaFormats(mediaInfo);
+
+      if (supportedVideoFormats.Count > 0)
+      {
+        // set initial quality format
+        formatIndex = TryGetInitialFormatIndex();
+
+        MediaFormat format = supportedVideoFormats[formatIndex];
+
+        // use audio player if no audio stream found
+        if (format.acodec == "none")
+        {
+          useAudioPlayer = true;
+          MediaFormat audioFormat = TryGetAudioStream();
+          InitAudioPlayer(audioFormat.url);
+        }
+        else
+        {
+          if (audioPlayer != null)
+          {
+            audioPlayer.Stop();
+          }
+          useAudioPlayer = false;
+        }
+
+        // set video player url
+        videoPlayer.url = ValidParsedVideoUrl(mediaInfo, format.url);
+
+        // prepare video for play
+        Prepare();
+      }
+      else
+      {
+        Debug.LogWarningFormat(LOG_FORMAT, "No supported video stream format found!");
+      }
 
       parseCompleted(this, mediaInfo);
     }
@@ -91,7 +116,12 @@ namespace Evereal.YoutubeDLPlayer
     public event PrepareCompletedEvent prepareCompleted = delegate { };
     private void OnPrepareCompleted(VideoPlayer player)
     {
-      prepareCompleted(this);
+      if ((useAudioPlayer && audioPlayer.isPrepared) || !useAudioPlayer)
+      {
+        Play();
+
+        prepareCompleted(this);
+      }
     }
 
     // Invoked when the <c>VideoPlayer</c> clock is synced back to its <c>VideoTimeReference</c>.
@@ -138,8 +168,20 @@ namespace Evereal.YoutubeDLPlayer
     }
     private void OnErrorReceived(VideoPlayer source, string message)
     {
-      Debug.LogWarningFormat(LOG_FORMAT, message);
+      Debug.LogErrorFormat(LOG_FORMAT, message);
       errorReceived(this, ErrorCode.PLAY_VIDEO_FAILED);
+    }
+
+    // Invoked when the audio player preparation is complete.
+    private void OnAudioPrepareCompleted(VideoPlayer source)
+    {
+      if (isPrepared)
+      {
+        // if video already prepared
+        Play();
+
+        prepareCompleted(this);
+      }
     }
 
     #endregion
@@ -159,6 +201,32 @@ namespace Evereal.YoutubeDLPlayer
     public MediaInfo GetVideoInfo()
     {
       return mediaInfo;
+    }
+
+    public void SwitchVideoFormat(int index)
+    {
+      if (index >= supportedVideoFormats.Count || index < 0)
+        return;
+      Stop();
+      formatIndex = index;
+      MediaFormat format = supportedVideoFormats[formatIndex];
+      // use audio player if no audio stream found
+      if (format.acodec == "none")
+      {
+        useAudioPlayer = true;
+        MediaFormat audioFormat = TryGetAudioStream();
+        InitAudioPlayer(audioFormat.url);
+      }
+      else
+      {
+        if (audioPlayer != null)
+        {
+          audioPlayer.Stop();
+        }
+        useAudioPlayer = false;
+      }
+      SetVideoParsedUrl(format.url);
+      Prepare();
     }
 
     public void SetVideoUrl(string url)
@@ -188,15 +256,14 @@ namespace Evereal.YoutubeDLPlayer
       targetCamera = cam;
     }
 
-    public void Parse(bool auto = true)
+    public void Parse()
     {
       if (string.IsNullOrEmpty(url))
       {
         Debug.LogWarningFormat(LOG_FORMAT, "Please provide the video url!");
         return;
       }
-      autoPlay = auto;
-      ytdlParser.SetOptions(GetVideoUrlParseOptions(url));
+      ytdlParser.SetOptions(Constants.DEFAULT_YTDL_VIDEO_PARSE_OPTIONS);
       StartCoroutine(ytdlParser.PrepareAndParse(ValidVideoUrl(url)));
       parseStarted(this);
     }
@@ -205,9 +272,21 @@ namespace Evereal.YoutubeDLPlayer
     {
       if (!isParsed)
       {
+        Parse();
         return;
       }
-      videoPlayer.Prepare();
+      if (!isParsed)
+      {
+        return;
+      }
+      if (!videoPlayer.isPrepared)
+      {
+        videoPlayer.Prepare();
+      }
+      if (useAudioPlayer && !audioPlayer.isPrepared)
+      {
+        audioPlayer.Prepare();
+      }
     }
 
     public void Play()
@@ -218,72 +297,144 @@ namespace Evereal.YoutubeDLPlayer
         return;
       }
       videoPlayer.Play();
+      if (useAudioPlayer)
+      {
+        audioPlayer.Play();
+      }
       isPaused = false;
     }
 
     public void Pause()
     {
       videoPlayer.Pause();
+      if (useAudioPlayer)
+      {
+        audioPlayer.Pause();
+      }
       isPaused = true;
     }
 
     public void Stop()
     {
       videoPlayer.Stop();
+      if (useAudioPlayer)
+      {
+        audioPlayer.Stop();
+      }
     }
 
     public void StepForward()
     {
       videoPlayer.StepForward();
+      if (useAudioPlayer)
+      {
+        audioPlayer.StepForward();
+      }
     }
 
     public bool GetAudioMute(ushort trackIndex)
     {
-      if (videoPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
+      if (useAudioPlayer)
       {
-        return videoPlayer.GetDirectAudioMute(trackIndex);
+        if (audioPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
+        {
+          return audioPlayer.GetDirectAudioMute(trackIndex);
+        }
+        else if (audioPlayer.audioOutputMode == VideoAudioOutputMode.AudioSource)
+        {
+          return audioPlayer.GetTargetAudioSource(trackIndex).mute;
+        }
       }
-      else if (videoPlayer.audioOutputMode == VideoAudioOutputMode.AudioSource)
+      else
       {
-        return videoPlayer.GetTargetAudioSource(trackIndex).mute;
+        if (videoPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
+        {
+          return videoPlayer.GetDirectAudioMute(trackIndex);
+        }
+        else if (videoPlayer.audioOutputMode == VideoAudioOutputMode.AudioSource)
+        {
+          return videoPlayer.GetTargetAudioSource(trackIndex).mute;
+        }
       }
       return false;
     }
 
     public void SetAudioMute(ushort trackIndex, bool mute)
     {
-      if (videoPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
+      if (useAudioPlayer)
       {
-        videoPlayer.SetDirectAudioMute(trackIndex, mute);
+        if (audioPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
+        {
+          audioPlayer.SetDirectAudioMute(trackIndex, mute);
+        }
+        else if (audioPlayer.audioOutputMode == VideoAudioOutputMode.AudioSource)
+        {
+          audioPlayer.GetTargetAudioSource(trackIndex).mute = mute;
+        }
       }
-      else if (videoPlayer.audioOutputMode == VideoAudioOutputMode.AudioSource)
+      else
       {
-        videoPlayer.GetTargetAudioSource(trackIndex).mute = mute;
+        if (videoPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
+        {
+          videoPlayer.SetDirectAudioMute(trackIndex, mute);
+        }
+        else if (videoPlayer.audioOutputMode == VideoAudioOutputMode.AudioSource)
+        {
+          videoPlayer.GetTargetAudioSource(trackIndex).mute = mute;
+        }
       }
     }
 
     public float GetAudioVolume(ushort trackIndex)
     {
-      if (videoPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
+      if (useAudioPlayer)
       {
-        return videoPlayer.GetDirectAudioVolume(trackIndex);
+        if (audioPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
+        {
+          return audioPlayer.GetDirectAudioVolume(trackIndex);
+        }
+        else if (audioPlayer.audioOutputMode == VideoAudioOutputMode.AudioSource)
+        {
+          return audioPlayer.GetTargetAudioSource(trackIndex).volume;
+        }
       }
-      else if (videoPlayer.audioOutputMode == VideoAudioOutputMode.AudioSource)
+      else
       {
-        return videoPlayer.GetTargetAudioSource(trackIndex).volume;
+        if (videoPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
+        {
+          return videoPlayer.GetDirectAudioVolume(trackIndex);
+        }
+        else if (videoPlayer.audioOutputMode == VideoAudioOutputMode.AudioSource)
+        {
+          return videoPlayer.GetTargetAudioSource(trackIndex).volume;
+        }
       }
       return 0f;
     }
 
     public void SetAudioVolume(ushort trackIndex, float volume)
     {
-      if (videoPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
+      if (useAudioPlayer)
       {
-        videoPlayer.SetDirectAudioVolume(trackIndex, volume);
+        if (audioPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
+        {
+          audioPlayer.SetDirectAudioVolume(trackIndex, volume);
+        }
+        else if (audioPlayer.audioOutputMode == VideoAudioOutputMode.AudioSource)
+        {
+          audioPlayer.GetTargetAudioSource(trackIndex).volume = volume;
+        }
       }
-      else if (videoPlayer.audioOutputMode == VideoAudioOutputMode.AudioSource)
+      else
       {
-        videoPlayer.GetTargetAudioSource(trackIndex).volume = volume;
+        if (videoPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
+        {
+          videoPlayer.SetDirectAudioVolume(trackIndex, volume);
+        }
+        else if (videoPlayer.audioOutputMode == VideoAudioOutputMode.AudioSource)
+        {
+          videoPlayer.GetTargetAudioSource(trackIndex).volume = volume;
+        }
       }
     }
 
@@ -296,6 +447,10 @@ namespace Evereal.YoutubeDLPlayer
       set
       {
         videoPlayer.time = value;
+        if (useAudioPlayer)
+        {
+          audioPlayer.time = value;
+        }
       }
     }
 
@@ -308,6 +463,10 @@ namespace Evereal.YoutubeDLPlayer
       set
       {
         videoPlayer.frame = value;
+        if (useAudioPlayer)
+        {
+          audioPlayer.frame = value;
+        }
       }
     }
 
@@ -346,39 +505,6 @@ namespace Evereal.YoutubeDLPlayer
       }
     }
 
-    private void ExtractAvailableVideoFormat()
-    {
-      availableMediaFormat.Clear();
-      // parse valid format for unity video player
-      foreach (MediaFormat format in mediaInfo.formats)
-      {
-        // TODO, support other container and protocol
-        if (
-          format.ext == "mp4" &&
-          format.acodec != "none" &&
-          (format.protocol == "https" || format.protocol == "http")
-        )
-        {
-          availableMediaFormat.Add(format);
-        }
-      }
-    }
-    /// <summary>
-    /// Este método fue editado por Oscar Gutierrez para que los usuarios que tengan pc con pocos recursos 
-    /// no se mamen con videos pesados
-    /// </summary>
-    /// <param name="url">Esta variable ni se para que la usaban, al parecer no hace nada...</param>
-    /// <returns></returns>
-    private string GetVideoUrlParseOptions(string url)
-    {
-            var bestFormat = "";
-            if (videoQuality == EZVideoQuality.Best720) bestFormat = "best[height<=720]";
-            else if (videoQuality == EZVideoQuality.Best480) bestFormat = "best[height<=480]";
-            else if (videoQuality == EZVideoQuality.Best360) bestFormat = "best[height<=360]";
-            return string.Format("--format {0}[protocol=https][ext=mp4]/[protocol=http][ext=mp4] --no-cache-dir", bestFormat);
-            //return Constants.WORST_YTDL_VIDEO_PARSE_OPTIONS;
-    }
-
     private string ValidVideoUrl(string url)
     {
       if (url.Contains("www.youtube.com"))
@@ -398,6 +524,86 @@ namespace Evereal.YoutubeDLPlayer
         url = url.Replace("source=1", "");
       }
       return url;
+    }
+
+    private void InitAudioPlayer(string audioUrl)
+    {
+      if (audioPlayer == null)
+      {
+        // initial video player
+        audioPlayer = gameObject.AddComponent<VideoPlayer>();
+        audioPlayer.renderMode = VideoRenderMode.APIOnly;
+        audioPlayer.source = VideoSource.Url;
+        audioPlayer.playOnAwake = false;
+        audioPlayer.waitForFirstFrame = true;
+        audioPlayer.skipOnDrop = false;
+        audioPlayer.isLooping = loop;
+
+        // set audio output mode to AudioSource
+        audioPlayer.audioOutputMode = VideoAudioOutputMode.AudioSource;
+        audioPlayer.controlledAudioTrackCount = 1;
+        audioPlayer.EnableAudioTrack(0, true);
+        audioPlayer.SetTargetAudioSource(0, audioSource);
+
+        audioPlayer.prepareCompleted += OnAudioPrepareCompleted;
+      }
+
+      string validUrl = ValidParsedVideoUrl(mediaInfo, audioUrl);
+      if (audioPlayer.url != validUrl)
+      {
+        audioPlayer.url = validUrl;
+      }
+    }
+
+    private MediaFormat TryGetAudioStream()
+    {
+      // get first available audio stream
+      for (int i = 0; i < supportedVideoFormats.Count; i++)
+      {
+        MediaFormat format = supportedVideoFormats[i];
+        if (format.acodec != "none" && format.acodec != null)
+        {
+          return format;
+        }
+      }
+      return null;
+    }
+
+    private int TryGetInitialFormatIndex()
+    {
+      // get target height
+      int targetHeight = 360;
+      switch (initialQuality)
+      {
+        case QualityType._360p:
+          targetHeight = 360;
+          break;
+        case QualityType._720p:
+          targetHeight = 720;
+          break;
+        case QualityType._1080p:
+          targetHeight = 1080;
+          break;
+        case QualityType._1440p:
+          targetHeight = 1440;
+          break;
+        case QualityType._2160p:
+          targetHeight = 2160;
+          break;
+      }
+      // search best fit video stream index
+      int index = 0, minDiff = int.MaxValue;
+      for (int i = 0; i < supportedVideoFormats.Count; i++)
+      {
+        MediaFormat format = supportedVideoFormats[i];
+        int diff = Math.Abs(format.height - targetHeight);
+        if (diff < minDiff)
+        {
+          index = i;
+          minDiff = diff;
+        }
+      }
+      return index;
     }
 
     #endregion
@@ -426,22 +632,28 @@ namespace Evereal.YoutubeDLPlayer
       videoPlayer.controlledAudioTrackCount = 1;
       videoPlayer.EnableAudioTrack(0, true);
       videoPlayer.SetTargetAudioSource(0, audioSource);
+
       // set video render type
       SwitchRenderType();
-      // initial media format list
-      availableMediaFormat = new List<MediaFormat>();
     }
 
     private void Start()
     {
-      if (string.IsNullOrEmpty(url))
-      {
-        Debug.LogWarningFormat(LOG_FORMAT, "Please provide the video url!");
-        return;
-      }
       if (autoPlay)
       {
-        Play();
+        Prepare();
+      }
+    }
+
+    private void Update()
+    {
+      if (useAudioPlayer)
+      {
+        // sync video/audio player
+        if (Math.Abs((videoPlayer.time - audioPlayer.time)) >= 1)
+        {
+          audioPlayer.time = videoPlayer.time;
+        }
       }
     }
 
@@ -472,6 +684,13 @@ namespace Evereal.YoutubeDLPlayer
       videoPlayer.clockResyncOccurred -= OnClockResyncOccurred;
       videoPlayer.loopPointReached -= OnLoopPointReached;
       videoPlayer.errorReceived -= OnErrorReceived;
+
+      if (audioPlayer != null)
+      {
+        audioPlayer.prepareCompleted -= OnAudioPrepareCompleted;
+        Destroy(audioPlayer);
+        audioPlayer = null;
+      }
     }
 
     #endregion

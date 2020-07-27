@@ -141,6 +141,8 @@ MonoBehaviour:
   url: https://www.youtube.com/watch?v=DDsRfbfnC_A
   autoPlay: 1
   loop: 1
+  supportedAudioFormats: []
+  initialQuality: 2
   renderType: 1
   videoRenderer: {fileID: 0}
   targetCamera: {fileID: 20364658721016802}

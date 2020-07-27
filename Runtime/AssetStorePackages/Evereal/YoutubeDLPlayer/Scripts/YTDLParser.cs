@@ -321,7 +321,7 @@ namespace Evereal.YoutubeDLPlayer
         // parse video url
         try
         {
-          string arguments = string.Format(" {0} --no-warnings --dump-json {1}", options, url);
+          string arguments = string.Format(" {0} --dump-json {1}", options, url);
 
           Process process = new Process();
           process.StartInfo.FileName = YTDLUtils.path;
