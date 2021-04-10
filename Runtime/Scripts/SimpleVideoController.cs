@@ -17,7 +17,6 @@ namespace Ezphera.MultiVideoPlayer
         //public CanvasGroup canvasGroup;
         //public GameObject controledByMsn;
         public Canvas canvasConsole;
-        //public InputField urlVideo = null;
         bool cameraNull = false;
         [SerializeField] VideoPlayerProgressBar videoPlayerProgressBar;
         public Slider volumenSlider;
@@ -35,6 +34,10 @@ namespace Ezphera.MultiVideoPlayer
 
         public AudioSource audioSource;
         public GameObject playBtn, pauseBtn;
+
+        private float totalVideoDuration;
+        private float currentVideoDuration;
+        float videoDuration;
         private void Awake()
         {
             //photonView = GetComponent<PhotonView>();
@@ -78,6 +81,45 @@ namespace Ezphera.MultiVideoPlayer
             playBtn.SetActive(!videoPlayer.isPlaying);
             pauseBtn.SetActive(videoPlayer.isPlaying);
 
+        }
+        private void FixedUpdate()
+        {
+            if (videoPlayer.isPlaying)
+            {
+                totalVideoDuration = Mathf.RoundToInt(videoPlayer.frameCount / videoPlayer.frameRate);
+
+                currentVideoDuration = Mathf.RoundToInt(videoPlayer.frame / videoPlayer.frameRate);
+            }
+            if (currenTime != null && totalTime != null)
+            {
+                currenTime.text = FormatTime(Mathf.RoundToInt(currentVideoDuration));
+
+                //if (videoDuration < totalVideoDuration && (videoPlayer.url != ""))
+                //    totalTime.text = FormatTime(Mathf.RoundToInt(videoDuration));
+                //else
+                totalTime.text = FormatTime(Mathf.RoundToInt(totalVideoDuration));
+
+
+            }
+        }
+
+        private string FormatTime(int time)
+        {
+            int hours = time / 3600;
+            int minutes = (time % 3600) / 60;
+            int seconds = (time % 3600) % 60;
+            if (hours == 0 && minutes != 0)
+            {
+                return minutes.ToString("00") + ":" + seconds.ToString("00");
+            }
+            else if (hours == 0 && minutes == 0)
+            {
+                return "00:" + seconds.ToString("00");
+            }
+            else
+            {
+                return hours.ToString("00") + ":" + minutes.ToString("00") + ":" + seconds.ToString("00");
+            }
         }
         //public override void OnConnectedToMaster()
         //{
